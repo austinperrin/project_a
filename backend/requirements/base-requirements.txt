@@ -1,0 +1,9 @@
+# Base Requirements for all Enviornments
+
+# Django related dependancies
+django==5.2.7
+django-decouple==2.1
+psycopg2-binary==2.9.10
+
+# REST API framework
+djangorestframework==3.15.2
