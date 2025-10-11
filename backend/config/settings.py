@@ -21,30 +21,26 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY')
+SECRET_KEY = config('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DJANGO_DEBUG', default=True)
 
-# Handle ALLOWED_HOSTS with Enhanced Error Handling
-ALLOWED_HOSTS_FILE = BASE_DIR / config('ALLOWED_HOSTS_FILE', default='.env.hosts')
+# Handle ALLOWED_HOSTS
+ALLOWED_HOSTS_FILE = BASE_DIR / config('DJANGO_ALLOWED_HOSTS_FILE', default='.env.hosts')
 
-try:
-    if not ALLOWED_HOSTS_FILE.exists():
-        raise FileNotFoundError(f"File '{ALLOWED_HOSTS_FILE}' not found.")
+if not ALLOWED_HOSTS_FILE.exists():
+    raise FileNotFoundError(f"DJANGO_ALLOWED_HOSTS_FILE '{ALLOWED_HOSTS_FILE}' not found.")
 
-    with open(ALLOWED_HOSTS_FILE) as f:
-        ALLOWED_HOSTS = [
-            line.strip()
-            for line in f
-            if line.strip() and not line.startswith('#')
-        ]
+with open(ALLOWED_HOSTS_FILE) as f:
+    ALLOWED_HOSTS = [
+        line.strip()
+        for line in f
+        if line.strip() and not line.startswith('#')
+    ]
 
-    if not ALLOWED_HOSTS:
-        raise ValueError(f"File '{ALLOWED_HOSTS_FILE}' is empty or contains only comments.")
-
-except (FileNotFoundError, ValueError) as e:
-    raise FileNotFoundError(str(e))
+if not ALLOWED_HOSTS:
+    raise ValueError(f"DJANGO_ALLOWED_HOSTS_FILE '{ALLOWED_HOSTS_FILE}' is empty or contains only comments.")
 
 
 # Application definition
@@ -93,11 +89,11 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME'),
-        'USER': config('DB_USER'),
-        'PASSWORD': config('DB_PASSWORD'),
-        'HOST': config('DB_HOST'),
-        'PORT': config('DB_PORT'),
+        'NAME': config('POSTGRES_DB'),
+        'USER': config('POSTGRES_USER'),
+        'PASSWORD': config('POSTGRES_PASSWORD'),
+        'HOST': config('POSTGRES_HOST', default='db'),
+        'PORT': config('POSTGRES_PORT', cast=int, default=5432),
     }
 }
 
