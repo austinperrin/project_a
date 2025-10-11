@@ -1,2 +1,2 @@
 # Production requirements (inherits from base-requirements.txt)
--r base-requirements.txt
+-r ./base-requirements.txt
