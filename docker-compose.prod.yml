@@ -1,0 +1,86 @@
+version: "3.9"
+
+services:
+  # =========================
+  # Backend (Django + Gunicorn)
+  # =========================
+  backend:
+    build:
+      context: ./backend
+      target: prod
+    container_name: backend
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000
+    env_file:
+      - .env
+    expose:
+      - "8000"
+    depends_on:
+      - db
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+      - ./backend/.env.hosts:/app/.env.hosts:ro
+    networks:
+      - prodnet
+
+  # =========================
+  # Frontend (React built by Vite)
+  # =========================
+  frontend:
+    build:
+      context: ./frontend
+      target: prod
+    container_name: frontend
+    depends_on:
+      - backend
+    networks:
+      - prodnet
+    # Nginx will serve static files, not this container directly
+    expose:
+      - "80"
+
+  # =========================
+  # Nginx Reverse Proxy
+  # =========================
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+      - ./frontend/dist:/usr/share/nginx/html
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - prodnet
+
+  # =========================
+  # Database (PostgreSQL)
+  # =========================
+  db:
+    image: postgres:16-alpine
+    container_name: postgres
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - prodnet
+
+# =========================
+# Shared Volumes & Network
+# =========================
+volumes:
+  pgdata:
+  static_volume:
+  media_volume:
+
+networks:
+  prodnet:
+    driver: bridge
