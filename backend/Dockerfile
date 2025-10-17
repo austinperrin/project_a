@@ -1,60 +1,85 @@
-# =========================
-# Stage 1 — Base image
-# =========================
-FROM python:3.12-slim AS base
+###############################################################
+# Backend Service Dockerfile
+# Multi-stage build for development and production environments
+# Base image: python:3.14.0-slim-trixie
+###############################################################
 
-# Set environment variables for Python
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+# ============================
+# Base Stage
+# ============================
+FROM python:3.14.0-slim-trixie AS base
 
 WORKDIR /app
 
-# Install system dependencies
+# Environment configuration for Python and SSL trust
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt \
+    SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+
+# Install system dependencies and configure CA certificates
+COPY ./certs /usr/local/share/ca-certificates/
 RUN apt-get update && apt-get install -y \
+    ca-certificates \
     build-essential \
     libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
+ && update-ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
 
-# Copy requirement files
-COPY requirements/ ./requirements/
+# Configure pip to use trusted hosts and CA certs
+RUN mkdir -p /root/.config/pip \
+ && echo "[global]\ncert = /etc/ssl/certs/ca-certificates.crt\ntrusted-host = pypi.org pypi.python.org files.pythonhosted.org" \
+    > /root/.config/pip/pip.conf
 
-# =========================
-# Stage 2 — Development image
-# =========================
+# Copy backend source code into the image
+COPY ./backend ./backend
+
+
+# ============================
+# Development Stage
+# ============================
 FROM base AS dev
 
-# Install dev dependencies
+# Install all development dependencies
 RUN pip install --upgrade pip && \
-    pip install -r requirements/base-requirements.txt && \
-    pip install -r requirements/dev-requirements.txt
+    pip install -r backend/requirements/dev-requirements.txt
 
-# Copy project files
-COPY . .
-
-# Default command for development server
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
-
-# =========================
-# Stage 3 — Production image
-# =========================
-FROM base AS prod
-
-# Install production dependencies
-RUN pip install --upgrade pip && \
-    pip install -r requirements/base-requirements.txt && \
-    pip install -r requirements/prod-requirements.txt && \
-    pip install gunicorn psycopg2-binary
-
-# Copy project files
-COPY . .
-
-# Collect static files during build (optional)
-RUN python manage.py collectstatic --noinput || true
-
-# Expose the application port
+# Expose port and start Django development server
 EXPOSE 8000
+CMD ["python", "backend/manage.py", "runserver", "0.0.0.0:8000"]
 
-# Run the app with Gunicorn
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]
+
+# ============================
+# Production Build Stage
+# ============================
+FROM base AS builder
+
+# Install only production dependencies to reduce final image size
+RUN pip install --upgrade pip && \
+    pip install --prefix=/install -r backend/requirements/requirements.txt
+
+
+# ============================
+# Production Runtime Stage
+# ============================
+FROM python:3.14.0-slim-trixie AS prod
+
+WORKDIR /app
+
+# Install runtime dependencies and configure CA certificates
+COPY ./certs /usr/local/share/ca-certificates/
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    libpq-dev \
+ && update-ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
+# Copy production dependencies from builder stage
+COPY --from=builder /install /usr/local
+
+# Copy backend source code
+COPY ./backend ./backend
+
+# Expose port and start Gunicorn server for production
+EXPOSE 8000
+CMD ["gunicorn", "backend.wsgi:application", "--bind", "0.0.0.0:8000"]
