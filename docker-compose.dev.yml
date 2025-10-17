@@ -15,7 +15,7 @@ services:
     depends_on:
       - db
     environment:
-      - DJANGO_SETTINGS_MODULE=config.settings
+      - DJANGO_SETTINGS_MODULE=config.settings.dev
     volumes:
       # Mount certs from host instead of baking them in image
       - ./certs:/usr/local/share/ca-certificates:ro

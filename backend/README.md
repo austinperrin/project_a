@@ -22,7 +22,11 @@ backend/
 ├── config/
 │   ├── __init__.py
 │   ├── asgi.py
-│   ├── settings.py
+│   ├── settings/
+│   │   ├── __init__.py
+│   │   ├── base.py
+│   │   ├── dev.py
+│   │   └── prod.py
 │   ├── urls.py
 │   └── wsgi.py
 ├── requirements/
