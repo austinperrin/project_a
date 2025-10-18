@@ -12,12 +12,17 @@ FROM node:25-alpine AS base
 WORKDIR /app
 
 # Configure CA trust for internal/company certificate
-COPY ./certs/company-ca.crt /etc/ssl/certs/company-ca.crt
-RUN mkdir -p /usr/local/share/ca-certificates \
+COPY ./certs/ /etc/ssl/certs/
+
+RUN if [ -f /etc/ssl/certs/company-ca.crt ]; then \
+	mkdir -p /usr/local/share/ca-certificates \
     && cp /etc/ssl/certs/company-ca.crt /usr/local/share/ca-certificates/company-ca.crt \
     && cat /usr/local/share/ca-certificates/company-ca.crt >> /etc/ssl/certs/ca-certificates.crt \
     && apk update && apk add --no-cache ca-certificates \
-    && update-ca-certificates
+    && update-ca-certificates ; \
+    else \
+      echo "No company CA found. Continuing without it." ; \
+    fi
 
 # Configure Node and npm to trust this CA
 ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
