@@ -2,7 +2,7 @@
 
 # Django related dependancies
 django==5.2.7
-django-decouple==2.1
+django-environ==0.12.0
 psycopg2-binary==2.9.10
 
 # REST API framework

@@ -2,18 +2,20 @@
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
-from decouple import config
+import environ
 
+env = environ.Env(
+    DJANGO_SETTINGS_MODULE=(str, "config.settings.dev"),
+)
+
+# Read .env file if it exists
+environ.Env.read_env()
 
 def main():
     """Run administrative tasks."""
-    # Determine which settings to load based on environment variable
-    if config('DJANGO_SETTINGS_MODULE') == 'config.settings.prod':
-        # Load production settings
-        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.prod")
-    else:
-        # Load development settings (default)
-        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.dev")
+
+    # Get the settings module from the environment (or default)
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", env("DJANGO_SETTINGS_MODULE"))
 
     try:
         from django.core.management import execute_from_command_line
