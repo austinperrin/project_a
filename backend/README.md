@@ -10,7 +10,7 @@ For full project setup, see [Project Root README](../README.md).
 - Django & Django REST Framework
 - Gunicorn (production)
 - PostgreSQL
-- django-decouple
+- django-environ
 - Docker (multi-container networking)
 
 ---
@@ -50,21 +50,41 @@ backend/
 These are the backend-specific environment variables.  
 See the root README for the full `.env` configuration.
 
-```bash
-# Django
+```env
+# ============================================================
+# Django Core Settings
+# ============================================================
+
 DJANGO_SETTINGS_MODULE=config.settings.dev
-DJANGO_SECRET_KEY=your-secret-key
-DJANGO_DEBUG=True # Set to False in production
+DJANGO_SECRET_KEY=change-me-to-a-very-secret-value
+DJANGO_DEBUG=True  # Set to False in production!
 
-# Django file containing allowed hosts (newline separated)
-DJANGO_ALLOWED_HOSTS_FILE=.env.hosts
+# Allowed hosts (comma separated)
+DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
 
-# Database
-POSTGRES_DB=your_db_name
-POSTGRES_USER=your_user
-POSTGRES_PASSWORD=your_password
-POSTGRES_HOST=db
-POSTGRES_PORT=5432
+# ============================================================
+# Database Configuration
+# ============================================================
+
+# Database (single URL format)
+# postgres://<USER>:<PASSWORD>@<HOST>:<PORT>/<DATABASE_NAME>
+DATABASE_URL=postgres://postgres:postgres@db:5432/project_a
+
+# ============================================================
+# Email Configuration
+# ============================================================
+
+# Development backend (prints emails to console)
+EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+
+# Production backend (SMTP example)
+# EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+# EMAIL_HOST=smtp.example.com
+# EMAIL_PORT=587
+# EMAIL_USE_TLS=True
+# EMAIL_HOST_USER=user@example.com
+# EMAIL_HOST_PASSWORD=your_password
+# DEFAULT_FROM_EMAIL=webmaster@example.com
 ```
 
 ---
@@ -96,16 +116,6 @@ docker compose exec backend python manage.py migrate
 docker compose exec backend python manage.py createsuperuser
 docker compose exec backend python manage.py collectstatic --noinput
 ```
-
----
-
-## Troubleshooting
-
-| Issue                     | Cause                             | Fix                                                       |
-|---------------------------|------------------------------------|------------------------------------------------------------|
-| `ALLOWED_HOSTS` error     | `.env.hosts` missing or empty     | Add `localhost` or domain                                  |
-| DB connection error       | DB not ready or wrong credentials | Check POSTGRES_* vars                                      |
-| Static files missing      | `collectstatic` not run           | Run `collectstatic` in container                            |
 
 ---
 

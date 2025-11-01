@@ -9,7 +9,6 @@ For full project setup, see [Project Root README](../README.md).
 ## Tech Stack
 - React
 - Vite
-- ESLint (code linting)
 - Docker (multi-container networking)
 
 ---
@@ -48,19 +47,14 @@ frontend/
 These are the backend-specific environment variables.  
 See the root README for the full `.env` configuration.
 
-```bash
-# React
+```env
+# ============================================================
+# Frontend Configuration
+# ============================================================
+
+# Public URL your frontend will call (used by Vite/React)
 VITE_API_URL=http://backend:8000
 ```
-
-Production example:
-
-```bash
-# React
-VITE_API_URL=https://yourdomain.com/api
-```
-
-`VITE_API_URL` should point to the backend API.
 
 ---
 
@@ -93,15 +87,6 @@ npm run build
 ```
 
 and outputs files to `/app/dist`, which are then served by Nginx.
-
----
-
-## Troubleshooting
-
-| Issue                          | Cause                                  | Fix                                                        |
-|----------------------------------|-----------------------------------------|------------------------------------------------------------|
-| API requests not working        | Wrong `VITE_API_URL` in `.env`         | Check and correct the API URL                               |
-| Port already in use             | Existing service running               | Stop other process or change port in Vite config            |
 
 ---
 

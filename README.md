@@ -38,7 +38,7 @@
 - Nginx reverse proxy (production)
 - Gunicorn WSGI server for production
 - Multi-stage Docker builds (dev/prod)
-- Environment-based settings via `django-decouple`
+- Environment-based settings via `django-environ`
 - Hot reload for frontend development
 - Modular architecture suitable for large teams and enterprise deployment
 
@@ -125,52 +125,74 @@ ProjectA/
 
 ---
 
+
 ## Environment Variables
 
-Project A uses **two environment files**:
+Project A uses a single environment file, **.env**, to configure all Django and project settings.
+This file defines application, database, and email configuration values that Django loads automatically via django-environ.
 
-- `.env` → General application configuration (Django, DB, etc.)
-- `.env.hosts` → List of allowed hosts for Django (`ALLOWED_HOSTS`)
+---
 
-Django settings dynamically read from `.env.hosts` file using:
-```python
-ALLOWED_HOSTS_FILE = BASE_DIR / config('DJANGO_ALLOWED_HOSTS_FILE', default='.env.hosts')
+### .env and .env.example
+
+The .env.example file in the project root provides a template for all required variables.
+To get started, copy it and adjust values for your environment:
+
+```bash
+cp .env.example .env
 ```
 
-### `.env.example`
+Then edit .env with your actual secrets and configuration details.
+
+---
+
+### Example: .env.example
+
 ```env
-# Django
+# ============================================================
+# Django Core Settings
+# ============================================================
+
 DJANGO_SETTINGS_MODULE=config.settings.dev
-DJANGO_SECRET_KEY=your-secret-key
-DJANGO_DEBUG=True # Set to False in production
+DJANGO_SECRET_KEY=change-me-to-a-very-secret-value
+DJANGO_DEBUG=True  # Set to False in production!
 
-# Django file containing allowed hosts (newline separated)
-DJANGO_ALLOWED_HOSTS_FILE=.env.hosts
+# Allowed hosts (comma separated)
+DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
 
-# Database
-POSTGRES_DB=your_db_name
-POSTGRES_USER=your_user
-POSTGRES_PASSWORD=your_password
-POSTGRES_HOST=db
-POSTGRES_PORT=5432
+# ============================================================
+# Database Configuration
+# ============================================================
 
-# React
+# Database (single URL format)
+# postgres://<USER>:<PASSWORD>@<HOST>:<PORT>/<DATABASE_NAME>
+DATABASE_URL=postgres://postgres:postgres@db:5432/project_a
+
+# ============================================================
+# Email Configuration
+# ============================================================
+
+# Development backend (prints emails to console)
+EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+
+# Production backend (SMTP example)
+# EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+# EMAIL_HOST=smtp.example.com
+# EMAIL_PORT=587
+# EMAIL_USE_TLS=True
+# EMAIL_HOST_USER=user@example.com
+# EMAIL_HOST_PASSWORD=your_password
+# DEFAULT_FROM_EMAIL=webmaster@example.com
+
+
+# ============================================================
+# Frontend Configuration
+# ============================================================
+
+# Public URL your frontend will call (used by Vite/React)
 VITE_API_URL=http://backend:8000
 ```
 
-### `.env.hosts.example`
-```env
-# List of allowed hosts (newline separated)
-localhost
-127.0.0.1
-backend
-```
-
-To set up:
-```bash
-cp .env.example .env
-cp .env.hosts.example .env.hosts
-```
 
 ---
 
@@ -214,7 +236,6 @@ git clone https://github.com/austinperrin/project_a.git
 cd project_a
 
 cp .env.example .env
-cp .env.hosts.example .env.hosts
 
 docker compose -f docker-compose.dev.yml up --build
 ```
