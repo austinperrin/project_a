@@ -14,8 +14,6 @@ services:
       - .env
     expose:
       - "8000"
-    depends_on:
-      - db
     volumes:
       - static_volume:/app/staticfiles
       - media_volume:/app/media
@@ -58,25 +56,10 @@ services:
     networks:
       - prodnet
 
-  # =========================
-  # Database (PostgreSQL)
-  # =========================
-  db:
-    image: postgres:16-alpine
-    container_name: postgres
-    restart: always
-    env_file:
-      - .env
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    networks:
-      - prodnet
-
 # =========================
 # Shared Volumes & Network
 # =========================
 volumes:
-  pgdata:
   static_volume:
   media_volume:
 
